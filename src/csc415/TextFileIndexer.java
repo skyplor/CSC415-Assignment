@@ -10,6 +10,8 @@ import org.apache.lucene.util.Version;
 
 import java.io.*;
 import java.util.ArrayList;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * This terminal application creates an Apache Lucene index in a folder and adds files into this index
@@ -26,7 +28,7 @@ public class TextFileIndexer
 
         String fileDirectory = "Index";
         String s = "";
-
+        
         TextFileIndexer indexer = null;
         try
         {
@@ -43,11 +45,11 @@ public class TextFileIndexer
         //===================================================
         try
         {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println("Enter the file or folder name to add into the index (q=quit):");
-            System.out.println("[Acceptable file types: .xml, .html, .html, .txt]");
-            s = br.readLine();
-            
+//            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+//            System.out.println("Enter the file or folder name to add into the index (q=quit):");
+//            System.out.println("[Acceptable file types: .xml, .html, .html, .txt]");
+//            s = br.readLine();
+            s = "tdt3";
             //try to add file into the index
             indexer.indexFileOrDirectory(s);
         }
@@ -103,20 +105,36 @@ public class TextFileIndexer
             FileReader fr = null;
             try
             {
+                // Pass the file as an XML and get the list of elements
+                NodeList nodeList = ReadAndPrintXMLFile.parseXML(f);
                 Document doc = new Document();
 
-                //===================================================
-                // add contents of file
-                //===================================================
-                fr = new FileReader(f);
-                doc.add(new Field("contents", fr));
+                int totalDocs = nodeList.getLength();
+                for (int i = 0; i < totalDocs; i++)
+                {
+//                    NodeList firstNameList = firstDocElement.getElementsByTagName("TEXT");
+//                    Element firstNameElement = (Element) firstNameList.item(0);
+//
+//                    NodeList textFNList = firstNameElement.getChildNodes();
+//                    System.out.println("Text : " + ((Node) textFNList.item(0)).getNodeValue().trim());
+                    //===================================================
+                    // add contents of file
+                    //===================================================
+//                    fr = new FileReader(f);
+                    Node n = nodeList.item(i);
+                    String text = n.getTextContent();
+                    if (n.getNodeName().equals("DOCNO"))
+                    {
+                        doc.add(new Field("docno", text, Field.Store.YES, Field.Index.ANALYZED));
+                        doc.add(new Field("date", text.substring(4,12), Field.Store.YES, Field.Index.ANALYZED));
+                        doc.add(new Field("source", text.substring(0,4), Field.Store.YES, Field.Index.ANALYZED));
+                    }
+                    if (n.getNodeName().equals("TEXT"))
+                    {
+                        doc.add(new Field("text", text, Field.Store.YES, Field.Index.ANALYZED));
+                    }
 
-                //===================================================
-                //adding second field which contains the path of the file
-                //===================================================
-                doc.add(new Field("path", fileName,
-                        Field.Store.YES,
-                        Field.Index.NOT_ANALYZED));
+                }
 
                 writer.addDocument(doc);
                 System.out.println("Added: " + f);
@@ -127,7 +145,7 @@ public class TextFileIndexer
             }
             finally
             {
-                fr.close();
+//                fr.close();
             }
         }
 
