@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package csc415;
+package CentralProcessingClasses;
 
 /**
  *
@@ -12,7 +12,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.StringReader;
-import java.util.regex.Matcher;
 import org.w3c.dom.Document;
 import org.w3c.dom.*;
 
@@ -22,7 +21,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-public class ReadAndPrintXMLFile
+public class IndexingCPC
 {
 
     public static NodeList parseXML(File filename)
@@ -32,7 +31,7 @@ public class ReadAndPrintXMLFile
         {
             // Open up the text file
             BufferedReader br = new BufferedReader(new FileReader(filename));
-            String txtContent = "<?xml version=\"1.1\"?>"; // Start the string with the XML header
+            String txtContent = "";//"<?xml version=\"1.1\"?>"; // Start the string with the XML header
 
             // Read all the text content to the string variable
             while (br.ready())

@@ -1,5 +1,6 @@
 package csc415;
 
+import CentralProcessingClasses.IndexingCPC;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -26,7 +27,7 @@ public class TextFileIndexer
     public static void main(String[] args) throws IOException
     {
 
-        String fileDirectory = "Index";
+        String fileDirectory = "Index-tdt3";
         String s = "";
         
         TextFileIndexer indexer = null;
@@ -106,7 +107,7 @@ public class TextFileIndexer
             try
             {
                 // Pass the file as an XML and get the list of elements
-                NodeList nodeList = ReadAndPrintXMLFile.parseXML(f);
+                NodeList nodeList = IndexingCPC.parseXML(f);
                 Document doc = new Document();
 
                 int totalDocs = nodeList.getLength();
@@ -125,6 +126,7 @@ public class TextFileIndexer
                     String text = n.getTextContent();
                     if (n.getNodeName().equals("DOCNO"))
                     {
+//                        doc.add(new Field("path", f.getCanonicalPath(), Field.Store.YES, Field.Index.NOT_ANALYZED));
                         doc.add(new Field("docno", text, Field.Store.YES, Field.Index.ANALYZED));
                         doc.add(new Field("date", text.substring(4,12), Field.Store.YES, Field.Index.ANALYZED));
                         doc.add(new Field("source", text.substring(0,4), Field.Store.YES, Field.Index.ANALYZED));
