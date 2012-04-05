@@ -1,13 +1,11 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package csc415;
+package Part2Main;
 
-/**
- *
- * @author Sky
- */
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.StringTokenizer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -25,14 +23,9 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 
-import java.io.*;
-import java.text.DecimalFormat;
-import java.util.StringTokenizer;
-
-public class CSC415
+public class Part2Weka
 {
-
-    private static int[][] results;
+    private static int[][] results = new int[38][38];
     private static String[] labels =
     {
         "Computers&Internet.Hardware", "Sports.OutdoorRecreation",
@@ -49,37 +42,8 @@ public class CSC415
         "Sports.Handball", "Sports.Running", "Sports.CricketWorldCup2007"
     };
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) throws IOException, ParseException
+    public void runWeka() throws IOException, ParseException
     {
-        kNNclassification();
-    }
-
-    public static void kNNclassification() throws IOException, ParseException
-    {
-        // initialize results table
-        results = new int[38][38];
-        for (int i = 0; i < results.length; i++)
-        {
-            for (int j = 0; j < results.length; j++)
-            {
-                if (i == 0)
-                {
-                    results[i][j] = j;
-                }
-                else if (j == 0)
-                {
-                    results[i][j] = i;
-                }
-                else
-                {
-                    results[i][j] = 0;
-                }
-            }
-        }
-
         // 0. Specify the analyzer.
         StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_35);
 
@@ -93,20 +57,26 @@ public class CSC415
 
         BufferedReader br = new BufferedReader(new FileReader(trainFile));
 
-        // skip first few lines until @data is reached
-        skipLines(br);
+        String strLine;
+
+        strLine = br.readLine();
+        while (!strLine.equals("@data"))
+        {
+            strLine = br.readLine();
+        }
 
         // read in actual training data
-        String thisLine = "";
-        while ((thisLine = br.readLine()) != null)
+        while ((strLine = br.readLine()) != null)
         {
-            // get tokens from line, and add tokens into index
-            String[] tokens = getTokens(thisLine);
-            addDoc(w, tokens[0], tokens[1]);
-            // System.out.println("DEBUG: document = " + tokens[0] + ", class = " + tokens[1]);
+            StringTokenizer st = new StringTokenizer(strLine, ",");
+            String token = st.nextToken();
+            String ques = token.substring(1, token.length() - 1);
+            String cat = st.nextToken();
+
+            addDoc(w, ques, cat);
+
         }
         br.close();
-
         w.close();
 
         // 2. query
@@ -118,17 +88,22 @@ public class CSC415
         IndexSearcher searcher = new IndexSearcher(reader);
         br = new BufferedReader(new FileReader(testFile));
 
-        // skip first few lines until @data is reached
-        skipLines(br);
-
         // read in test question
-        thisLine = "";
-        while ((thisLine = br.readLine()) != null)
+        String testLine;
+        testLine = br.readLine();
+        while (!testLine.equals("@data"))
         {
-            // get tokens from line, get query
-            String[] tokens = getTokens(thisLine);
-            String querystr = tokens[0];
-            // System.out.println("DEBUG: question = " + tokens[0] + ", class = " + tokens[1]);
+            testLine = br.readLine();
+        }
+        int j = 0;
+        while ((testLine = br.readLine()) != null && j < 2)
+        {
+            StringTokenizer st = new StringTokenizer(testLine, ",");
+            String token = st.nextToken();
+            String ques = token.substring(1, token.length() - 1);
+            String cat = st.nextToken();
+            String querystr = ques;
+
             // the "question" argument specifies the default field to use
             Query q = new QueryParser(Version.LUCENE_35, "question", analyzer).parse(querystr);
 
@@ -138,13 +113,11 @@ public class CSC415
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
             // find majority
-            String major = findMajority(hits, searcher);
-            // System.out.println("DEBUG: prediction: " + major);
-            // System.out.println("DEBUG: index number: " + getIntLabel(major) + "\n\n");
+            String majority = ClassifyTestQ(hits, searcher);
 
             // increment class in results table
-            int actual = getIntLabel(tokens[1]);
-            int predict = getIntLabel(major);
+            int actual = getIntLabel(cat);
+            int predict = getIntLabel(majority);
             results[predict][actual]++;
 
             searcher.close();
@@ -152,33 +125,13 @@ public class CSC415
         br.close();
 
         printResults();
+        System.out.println("Class: Precision,Recall");
+        System.out.println("---------------------------");
         // compute precision and recall for category
         for (int i = 1; i <= labels.length; i++)
         {
             evaluate(i);
         }
-    }
-
-    // Method to skip lines in train or test data file
-    private static void skipLines(BufferedReader br) throws IOException
-    {
-        String thisLine = "";
-        thisLine = br.readLine();
-        while (!thisLine.equals("@data"))
-        {
-            thisLine = br.readLine();
-        }
-    }
-
-    // Method to get question and corresponding class from input file line
-    private static String[] getTokens(String thisLine)
-    {
-        StringTokenizer st = new StringTokenizer(thisLine, ",");
-        String[] tokens = new String[2];
-        String token = st.nextToken();
-        tokens[0] = token.substring(1, token.length() - 1);
-        tokens[1] = st.nextToken();
-        return tokens;
     }
 
     // Method to add a new document into index
@@ -192,53 +145,52 @@ public class CSC415
     }
 
     // Method to determine which class label has the most occurrences
-    public static String findMajority(ScoreDoc[] hits, IndexSearcher searcher)
+    public static String ClassifyTestQ(ScoreDoc[] hits, IndexSearcher searcher)
             throws CorruptIndexException, IOException
     {
         // create predict array which will store class label counts
-        String predict[][] = new String[hits.length][2];
+        String majority[][] = new String[hits.length][2];
 
-        // fill in predict array
+        // fill in majority array
         for (int i = 0; i < hits.length; i++)
         {
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
-            // System.out.println("DEBUG: " + (i + 1) + ". " + d.get("class"));
 
-            for (int j = 0; j < predict.length; j++)
+            for (int j = 0; j < majority.length; j++)
             {
 
                 // fill row if class i does not exist
-                if (predict[j][0] == null)
+                if (majority[j][0] == null)
                 {
-                    predict[j][0] = d.get("class");
-                    predict[j][1] = "1";
+                    majority[j][0] = d.get("class");
+                    majority[j][1] = "1";
                     break;
                 }
                 // increment counter if class i exists in row j
-                else if (predict[j][0].equals(d.get("class")))
+                else if (majority[j][0].equals(d.get("class")))
                 {
-                    predict[j][1] = Integer.toString(Integer.parseInt(predict[j][1]) + 1);
+                    majority[j][1] = Integer.toString(Integer.parseInt(majority[j][1]) + 1);
                     break;
                 }
             }
         }
 
-        // bubble sort predict array on class counts
+        // bubble sort majority array on class counts
         boolean swap = true;
         while (swap)
         {
             swap = false;
-            for (int i = 0; i < predict.length - 1; i++)
+            for (int i = 0; i < majority.length - 1; i++)
             {
-                if (predict[i + 1][0] != null)
+                if (majority[i + 1][0] != null)
                 {
-                    if (Integer.parseInt(predict[i][1]) < Integer.parseInt(predict[i + 1][1]))
+                    if (Integer.parseInt(majority[i][1]) < Integer.parseInt(majority[i + 1][1]))
                     {
-                        String temp[] = new String[2];
-                        temp = predict[i];
-                        predict[i] = predict[i + 1];
-                        predict[i + 1] = temp;
+                        String temp[];
+                        temp = majority[i];
+                        majority[i] = majority[i + 1];
+                        majority[i + 1] = temp;
 
                         swap = true;
                     }
@@ -247,7 +199,7 @@ public class CSC415
         }
 
         // return class label with highest occurrence
-        return predict[0][0];
+        return majority[0][0];
     }
 
     // Method will return a corresponding integer representing a class label
@@ -270,9 +222,9 @@ public class CSC415
     // Method to print results table
     private static void printResults()
     {
-        drawLine(21);
-        System.out.println("Overall Results Table");
-        drawLine(21);
+        System.out.println("--------------------");
+        System.out.println("Overall Results");
+        System.out.println("--------------------");
         System.out.println();
 
         for (int i = 0; i < results.length; i++)
@@ -286,14 +238,9 @@ public class CSC415
         System.out.println();
     }
 
-    // Method to print contingency table for class i
+    // Method to print precision and recall for each class
     private static void evaluate(int i)
     {
-        String title = "Contingency Table for '" + getStringLabel(i) + "'";
-        drawLine(title.length());
-        System.out.println(title);
-        drawLine(title.length());
-        System.out.println("");
 
         String[][] metric =
         {
@@ -307,6 +254,9 @@ public class CSC415
                 "NO", "", ""
             }
         };
+
+        String[] precision = new String[38];
+        String[] recall = new String[38];
 
         // true positive
         metric[1][1] = Integer.toString(results[i][i]);
@@ -347,20 +297,9 @@ public class CSC415
         }
         metric[2][2] = Integer.toString(temp);
 
-        // print class contingency table
-        for (int j = 0; j < metric.length; j++)
-        {
-            for (int k = 0; k < metric.length; k++)
-            {
-                System.out.print(metric[j][k] + "\t");
-            }
-            System.out.println();
-        }
-        System.out.println();
-
         // compute precision and recall
-        String p = "";
-        String r = "";
+        String p;
+        String r;
         if (Double.parseDouble(metric[1][1]) == 0)
         {
             p = "0";
@@ -372,20 +311,16 @@ public class CSC415
                     / (Double.parseDouble(metric[1][1]) + Double.parseDouble(metric[1][2])));
             r = Double.toString(Double.parseDouble(metric[1][1])
                     / (Double.parseDouble(metric[1][1]) + Double.parseDouble(metric[2][1])));
+
         }
 
         DecimalFormat df = new DecimalFormat("0.00");
-        System.out.println("Precision P = " + df.format(Double.parseDouble(p)));
-        System.out.println("Recall R = " + df.format(Double.parseDouble(r)) + "\n");
-    }
 
-    // Method prints a separator line with the specified length
-    private static void drawLine(int length)
-    {
-        for (int i = 0; i < length; i++)
-        {
-            System.out.print("-");
-        }
-        System.out.println();
+        precision[i] = df.format(Double.parseDouble(p));
+        recall[i] = df.format(Double.parseDouble(r));
+
+        System.out.print(getStringLabel(i) + ":");
+        System.out.print(precision[i] + ",");
+        System.out.println(recall[i]);
     }
 }

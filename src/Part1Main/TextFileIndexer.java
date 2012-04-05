@@ -1,6 +1,9 @@
-package csc415;
+package Part1Main;
 
-import CentralProcessingClasses.IndexingCPC;
+import Part1CentralProcessingClasses.IndexingCPC;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -8,28 +11,31 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
-
-import java.io.*;
-import java.util.ArrayList;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
  * This terminal application creates an Apache Lucene index in a folder and adds files into this index
- * based on the input of the user.
  */
 public class TextFileIndexer
 {
 
     private IndexWriter writer;
-    private ArrayList<File> queue = new ArrayList<File>();
+    private ArrayList<File> queue = new ArrayList<>();
 
-    public static void main(String[] args) throws IOException
+    public TextFileIndexer()
+    {
+    }
+
+    public void runtdt3Indexer() throws IOException
     {
 
         String fileDirectory = "Index-tdt3";
         String s = "";
-        
+
+//        checkDirectory(fileDirectory);
+
         TextFileIndexer indexer = null;
         try
         {
@@ -46,10 +52,6 @@ public class TextFileIndexer
         //===================================================
         try
         {
-//            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-//            System.out.println("Enter the file or folder name to add into the index (q=quit):");
-//            System.out.println("[Acceptable file types: .xml, .html, .html, .txt]");
-//            s = br.readLine();
             s = "tdt3";
             //try to add file into the index
             indexer.indexFileOrDirectory(s);
@@ -59,10 +61,10 @@ public class TextFileIndexer
             System.out.println("Error indexing " + s + " : " + e.getMessage());
         }
 
-        //===================================================
-        //after adding, we always have to call the
-        //closeIndex, otherwise the index is not created    
-        //===================================================
+        // ===================================================
+        // After adding, we always have to call the
+        // closeIndex, otherwise the index is not created    
+        // ===================================================
         indexer.closeIndex();
     }
 
@@ -74,8 +76,6 @@ public class TextFileIndexer
      */
     TextFileIndexer(String indexDir) throws IOException
     {
-        // the boolean true parameter means to create a new index everytime, 
-        // potentially overwriting any existing files there.
         FSDirectory dir = FSDirectory.open(new File(indexDir));
 
         StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_35);
@@ -93,17 +93,16 @@ public class TextFileIndexer
      */
     public void indexFileOrDirectory(String fileName) throws IOException
     {
-        //===================================================
-        //gets the list of files in a folder (if user has submitted
-        //the name of a folder) or gets a single file name (is user
-        //has submitted only the file name) 
-        //===================================================
+        // =========================================================
+        // Gets the list of files in a folder (if user has submitted
+        // the name of a folder) or gets a single file name (is user
+        // has submitted only the file name) 
+        // =========================================================
         addFiles(new File(fileName));
 
         int originalNumDocs = writer.numDocs();
         for (File f : queue)
         {
-            FileReader fr = null;
             try
             {
                 // Pass the file as an XML and get the list of elements
@@ -113,44 +112,30 @@ public class TextFileIndexer
                 int totalDocs = nodeList.getLength();
                 for (int i = 0; i < totalDocs; i++)
                 {
-//                    NodeList firstNameList = firstDocElement.getElementsByTagName("TEXT");
-//                    Element firstNameElement = (Element) firstNameList.item(0);
-//
-//                    NodeList textFNList = firstNameElement.getChildNodes();
-//                    System.out.println("Text : " + ((Node) textFNList.item(0)).getNodeValue().trim());
-                    //===================================================
-                    // add contents of file
-                    //===================================================
-//                    fr = new FileReader(f);
+                    // =====================
+                    // Add contents of file
+                    // =====================
                     Node n = nodeList.item(i);
                     String text = n.getTextContent();
                     if (n.getNodeName().equals("DOCNO"))
                     {
-//                        doc.add(new Field("path", f.getCanonicalPath(), Field.Store.YES, Field.Index.NOT_ANALYZED));
                         doc.add(new Field("docno", text, Field.Store.YES, Field.Index.ANALYZED));
-                        doc.add(new Field("date", text.substring(4,12), Field.Store.YES, Field.Index.ANALYZED));
-                        doc.add(new Field("source", text.substring(0,4), Field.Store.YES, Field.Index.ANALYZED));
+                        doc.add(new Field("date", text.substring(4, 12), Field.Store.YES, Field.Index.ANALYZED));
+                        doc.add(new Field("source", text.substring(0, 4), Field.Store.YES, Field.Index.ANALYZED));
                     }
                     if (n.getNodeName().equals("TEXT"))
                     {
                         doc.add(new Field("text", text, Field.Store.YES, Field.Index.ANALYZED));
                     }
-
                 }
-
                 writer.addDocument(doc);
                 System.out.println("Added: " + f);
             }
-            catch (Exception e)
+            catch (DOMException | IOException e)
             {
                 System.out.println("Could not add: " + f);
             }
-            finally
-            {
-//                fr.close();
-            }
         }
-
         int newNumDocs = writer.numDocs();
         System.out.println("");
         System.out.println("************************");
@@ -177,11 +162,10 @@ public class TextFileIndexer
         else
         {
             String filename = file.getName().toLowerCase();
-            //===================================================
+            // ======================
             // Only index text files
-            //===================================================
-            if (filename.endsWith(".htm") || filename.endsWith(".html")
-                    || filename.endsWith(".xml") || filename.endsWith(".txt"))
+            // ======================
+            if (filename.endsWith(".htm") || filename.endsWith(".html") || filename.endsWith(".xml") || filename.endsWith(".txt"))
             {
                 queue.add(file);
             }
@@ -201,4 +185,25 @@ public class TextFileIndexer
     {
         writer.close();
     }
+
+//    /*
+//     * Delete tdt3 index folder if exists.
+//     */
+//    private void checkDirectory(String fileDirectory)
+//    {
+//        File directory = new File(fileDirectory);
+//
+//        //make sure directory exists
+//        if (directory.exists())
+//        {
+//            try
+//            {
+//                directory.delete();
+//            }
+//            catch (Exception e)
+//            {
+//                System.out.println("File deletion error: " + e);
+//            }
+//        }
+//    }
 }

@@ -1,22 +1,11 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package CentralProcessingClasses;
+package Part1CentralProcessingClasses;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.ParallelReader;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.*;
@@ -31,7 +20,7 @@ import org.apache.lucene.util.Version;
  *
  * @author Sky
  */
-public class SearchEngineProcessor
+public class Part1LuceneSearchEngineProcessor
 {
 
     private Directory directory, scoreDirectory;
@@ -41,9 +30,8 @@ public class SearchEngineProcessor
     private Integer maxResult;
     private ParallelReader preader;
 
-    public SearchEngineProcessor(String indexDirectory, String indexScoreDirectory, Integer maxResult, Boolean topicSpecific) throws IOException
+    public Part1LuceneSearchEngineProcessor(String indexDirectory, String indexScoreDirectory, Integer maxResult, Boolean topicSpecific) throws IOException
     {
-
         directory = FSDirectory.open(new File(indexDirectory));
         if (topicSpecific)
         {
@@ -90,7 +78,7 @@ public class SearchEngineProcessor
         }
 
         FieldScoreQuery fsQuery = new FieldScoreQuery("score", FieldScoreQuery.Type.FLOAT);
-        fsQuery.setBoost(30);
+        fsQuery.setBoost(10);
 
         CustomScoreQuery cq = null;
         if (topicSpecific)
@@ -107,7 +95,6 @@ public class SearchEngineProcessor
                         @Override
                         public float customScore(int doc, float subQueryScore, float valSrcScore)
                         {
-//                            System.out.println("base score = " + subQueryScore + " valSrcScore= " + valSrcScore);
                             return subQueryScore + (valSrcScore);
                         }
                     };
@@ -134,11 +121,9 @@ public class SearchEngineProcessor
             int docId = hits[i].doc;
             Document document = searcher.doc(docId);
 
-            System.out.println((i + 1) + ". " + document.get("docno") + " - " + (hits[i].score));
+            System.out.print((i + 1) + ". " + document.get("docno") + " - ");
             System.out.println(document.get("text"));
-            System.out.println();
         }
-
 
         // Close searcher when indexes are no longer needed.
         searcher.close();

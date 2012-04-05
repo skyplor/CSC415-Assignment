@@ -1,8 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package Models;
+package Part1Models;
 
 import org.apache.lucene.document.Document;
 
@@ -12,7 +8,6 @@ import org.apache.lucene.document.Document;
  */
 public class DocumentObj
 {
-
     private int docID;
     private Document doc;
     private int frequency = 0;

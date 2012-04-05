@@ -1,18 +1,10 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package csc415;
+package Part1Main;
 
-import CentralProcessingClasses.ComputeStaticScore;
-import CentralProcessingClasses.CustomComparator;
-import Models.DocumentObj;
+import Part1CentralProcessingClasses.ComputeStaticScore;
+import Part1Models.DocumentObj;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,16 +24,17 @@ public class ComputeStaticMain
 {
 
     private IndexWriter writer;
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) throws IOException
+
+    public ComputeStaticMain()
     {
-        // TODO code application logic here
+    }
+
+    public void runComputeStaticMain() throws IOException
+    {
         String fileDirectory = "Index-StaticScore";
-        
+
         ComputeStaticMain indexer = null;
-        
+
         try
         {
             indexer = new ComputeStaticMain(fileDirectory);
@@ -52,10 +45,10 @@ public class ComputeStaticMain
             System.exit(-1);
         }
         indexer.indexStaticScore();
-        
+
         indexer.closeIndex();
     }
-    
+
     ComputeStaticMain(String indexDir) throws IOException
     {
         FSDirectory dir = FSDirectory.open(new File(indexDir));
@@ -66,22 +59,18 @@ public class ComputeStaticMain
 
         writer = new IndexWriter(dir, config);
     }
-    
+
     private void indexStaticScore()
     {
         ComputeStaticScore computeScore = new ComputeStaticScore();
         try
         {
-            List<DocumentObj> docs = computeScore.train("Index-tdt3", "htmlterms.txt");
-//            CustomComparator scoreOrder = new CustomComparator();
-//            Collections.sort(docs, scoreOrder);
+            List<DocumentObj> docs = computeScore.compute("Index-tdt3", "htmlterms.txt");
             DecimalFormat df = new DecimalFormat("#.############");
-//            NumberFormat nf = NumberFormat.getInstance();
-            for(int i = 0; i<docs.size(); i++)
+            for (int i = 0; i < docs.size(); i++)
             {
                 Document doc = new Document();
                 String score = df.format(docs.get(i).getStaticQualityScore());
-                System.out.println(score);
                 doc.add(new Field("score", score, Field.Store.YES, Field.Index.NOT_ANALYZED));
                 writer.addDocument(doc);
             }
@@ -92,7 +81,7 @@ public class ComputeStaticMain
             System.out.println("Error Indexing");
         }
     }
-    
+
     /**
      * Close the index.
      *
