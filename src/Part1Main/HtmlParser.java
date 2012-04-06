@@ -6,12 +6,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Version;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -24,8 +18,6 @@ import org.jsoup.nodes.Document;
  */
 public class HtmlParser
 {
-
-    private IndexWriter writer;
 
     public HtmlParser()
     {
@@ -125,58 +117,5 @@ public class HtmlParser
         {
             System.out.println("Exception Caught: " + ex);
         }
-    }
-
-    HtmlParser(String indexDir) throws IOException
-    {
-        // =================================================================
-        // The boolean true parameter means to create a new index everytime, 
-        // potentially overwriting any existing files there.
-        // =================================================================
-        FSDirectory dir = FSDirectory.open(new File(indexDir));
-
-        StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_35);
-
-        IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_35, analyzer);
-
-        writer = new IndexWriter(dir, config);
-    }
-
-    /**
-     * Indexes a file or directory
-     *
-     * @param fileName the name of a text file or a folder we wish to add to the index
-     * @throws java.io.IOException
-     */
-    public void indexString(String[] html) throws IOException
-    {
-        try
-        {
-            String[] text = html;
-            org.apache.lucene.document.Document doc = new org.apache.lucene.document.Document();
-            Field field = new Field("term", text[0], Field.Store.YES, Field.Index.ANALYZED);
-            doc.add(field);
-            for (int i = 1; i < text.length; i++)
-            {
-                doc.add(new Field("term", text[i], Field.Store.YES, Field.Index.ANALYZED));
-            }
-
-            writer.addDocument(doc);
-            System.out.println("Added: " + text);
-        }
-        catch (Exception e)
-        {
-            System.out.println("Could not add: " + html);
-        }
-    }
-
-    /**
-     * Close the index.
-     *
-     * @throws java.io.IOException
-     */
-    public void closeIndex() throws IOException
-    {
-        writer.close();
     }
 }

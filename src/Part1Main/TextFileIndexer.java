@@ -186,24 +186,4 @@ public class TextFileIndexer
         writer.close();
     }
 
-//    /*
-//     * Delete tdt3 index folder if exists.
-//     */
-//    private void checkDirectory(String fileDirectory)
-//    {
-//        File directory = new File(fileDirectory);
-//
-//        //make sure directory exists
-//        if (directory.exists())
-//        {
-//            try
-//            {
-//                directory.delete();
-//            }
-//            catch (Exception e)
-//            {
-//                System.out.println("File deletion error: " + e);
-//            }
-//        }
-//    }
 }

@@ -51,7 +51,7 @@ public class Part1LuceneSearchEngine
             {
                 querytext = "\"Dan Ronan\"";
                 querysource = "";
-                querydate = "[19981101 TO 19981130]";
+                querydate = "199811*";
                 System.out.println("\nDocuments which contain the name \"Dan Ronan\" and was published in November 1998");
             }
 

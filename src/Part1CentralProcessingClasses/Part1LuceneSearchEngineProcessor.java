@@ -67,6 +67,7 @@ public class Part1LuceneSearchEngineProcessor
         IndexReader reader = null;
         IndexSearcher searcher;
 
+        System.out.println(query);
         if (topicSpecific)
         {
             searcher = new IndexSearcher(preader);
@@ -122,7 +123,14 @@ public class Part1LuceneSearchEngineProcessor
             Document document = searcher.doc(docId);
 
             System.out.print((i + 1) + ". " + document.get("docno") + " - ");
-            System.out.println(document.get("text"));
+            if (document.get("text").length() > 100)
+            {
+                System.out.println(document.get("text").substring(0, 100) + "...");
+            }
+            else
+            {
+                System.out.println(document.get("text"));
+            }
         }
 
         // Close searcher when indexes are no longer needed.

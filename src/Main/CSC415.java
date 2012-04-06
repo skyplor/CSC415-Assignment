@@ -1,7 +1,6 @@
 package Main;
 
 import Part1Main.ComputeStaticMain;
-import Part1Main.HtmlParser;
 import Part1Main.Part1LuceneSearchEngine;
 import Part1Main.TextFileIndexer;
 import Part2Main.Part2Weka;
@@ -40,6 +39,13 @@ public class CSC415
                         File tdt3Index = new File("Index-tdt3");
                         File staticScoreIndex = new File("Index-StaticScore");
                         File tdt3Data = new File ("tdt3");
+                        if (!tdt3Data.exists())
+                        {
+                            System.out.println("Error: tdt3 data folder not found.");
+                            System.out.println("Please place the tdt3 folder in this directory or rename the data folder to tdt3 if it is already in.");
+                            System.out.println("System exiting...");
+                            System.exit(0);
+                        }
                         if (!tdt3Index.exists())
                         {
                             System.out.println("Indexing tdt3 documents...");
@@ -56,13 +62,7 @@ public class CSC415
                             System.out.println("Static quality score index created!");
                             System.out.println();
                         }
-                        if (!tdt3Data.exists())
-                        {
-                            System.out.println("Error: tdt3 data folder not found.");
-                            System.out.println("Please place the tdt3 folder in this directory or rename the data folder to tdt3 if it is already in.");
-                            System.out.println("System exiting...");
-                            System.exit(0);
-                        }
+                        
                         Part1LuceneSearchEngine lucene = new Part1LuceneSearchEngine();
                         lucene.runSearchEngine();
                     }
